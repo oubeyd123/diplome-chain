@@ -7,10 +7,21 @@ import { verifyMessage } from 'ethers';
 export function createApp({ getOwner, upload, origin = 'http://localhost:5173', now = Date.now }) {
   const app = express();
   const challenges = new Map();
+  const configuredOrigin = new URL(origin);
+  const allowedOrigins = new Set([configuredOrigin.origin]);
+  // Vite prints 127.0.0.1 while setup instructions use localhost.
+  // Accept only those loopback aliases, keeping the configured protocol and port.
+  if (['localhost', '127.0.0.1'].includes(configuredOrigin.hostname)) {
+    for (const hostname of ['localhost', '127.0.0.1']) {
+      const alias = new URL(configuredOrigin.origin);
+      alias.hostname = hostname;
+      allowedOrigins.add(alias.origin);
+    }
+  }
   app.disable('x-powered-by');
   app.use('/api', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
-    if (req.headers.origin && req.headers.origin !== origin) return res.status(403).json({ error: 'Origine interdite.' });
+    if (req.headers.origin && !allowedOrigins.has(req.headers.origin)) return res.status(403).json({ error: 'Origine interdite.' });
     next();
   }, rateLimit({ windowMs: 60_000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false }), express.json({ limit: '4kb' }));
   app.post('/api/upload-challenge', async (req, res, next) => {
@@ -22,7 +33,7 @@ export function createApp({ getOwner, upload, origin = 'http://localhost:5173', 
       const owner = await getOwner();
       const nonce = randomBytes(32).toString('hex');
       const expires = now() + 120_000;
-      const message = `${origin}\nAutoriser un envoi PDF sur IPFS (aucune transaction).\nProprietaire: ${owner}\nSHA-256: ${hash}\nNonce: ${nonce}\nExpiration: ${expires}`;
+      const message = `${req.headers.origin || configuredOrigin.origin}\nAutoriser un envoi PDF sur IPFS (aucune transaction).\nProprietaire: ${owner}\nSHA-256: ${hash}\nNonce: ${nonce}\nExpiration: ${expires}`;
       challenges.set(nonce, { owner, hash: hash.toLowerCase(), message, expires });
       res.json({ nonce, message });
     } catch (e) { next(e); }

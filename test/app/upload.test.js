@@ -52,6 +52,29 @@ describe('authenticated upload API', () => {
     expect((await request(app).post('/api/upload-challenge').set('Origin','https://evil.example').send({ hash: sha256(pdf) })).status).toBe(403);
     expect((await request(app).post('/api/upload-challenge').send({ hash: 'no' })).status).toBe(400);
   });
+  it('accepts both local hostnames and binds the challenge to the browser origin', async () => {
+    for (const origin of ['http://localhost:5173', 'http://127.0.0.1:5173']) {
+      const res = await request(app).post('/api/upload-challenge').set('Origin', origin).send({ hash: sha256(pdf) });
+      expect(res.status).toBe(200);
+      expect(res.body.message.split('\n')[0]).toBe(origin);
+      expect((await send(res.body)).status).toBe(200);
+    }
+  });
+  it('does not allow a different local port, protocol, deceptive hostname or null origin', async () => {
+    for (const origin of ['http://localhost:5174', 'http://127.0.0.1:3001', 'https://localhost:5173', 'http://localhost.evil.example:5173', 'null']) {
+      const res = await request(app).post('/api/upload-challenge').set('Origin', origin).send({ hash: sha256(pdf) });
+      expect(res.status).toBe(403);
+    }
+  });
+  it('keeps deployed origins strict and supports a configured 127.0.0.1 alias', async () => {
+    const deployed = createApp({ getOwner: async () => owner.address, upload, origin: 'https://diplomas.example' });
+    for (const origin of ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://other.example']) {
+      expect((await request(deployed).post('/api/upload-challenge').set('Origin', origin).send({ hash: sha256(pdf) })).status).toBe(403);
+    }
+    expect((await request(deployed).post('/api/upload-challenge').set('Origin', 'https://diplomas.example').send({ hash: sha256(pdf) })).status).toBe(200);
+    const local = createApp({ getOwner: async () => owner.address, upload, origin: 'http://127.0.0.1:5173' });
+    expect((await request(local).post('/api/upload-challenge').set('Origin', 'http://localhost:5173').send({ hash: sha256(pdf) })).status).toBe(200);
+  });
   it('sanitizes upstream errors', async () => {
     upload.mockRejectedValue(new Error('SECRET_TOKEN_VALUE'));
     const res = await send(await challenge());

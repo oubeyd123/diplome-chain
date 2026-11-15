@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { confirmTransaction, errorMessage } from '../../src/utils/transactions';
 describe('transaction lifecycle', () => {
+  it('explains nested pruned-history RPC failures instead of the ethers wrapper error', () => {
+    expect(errorMessage({ shortMessage: 'could not coalesce error', error: { code: 4444, message: 'pruned history unavailable: requested 0, earliest available 1000000' } })).toContain('VITE_DEPLOY_BLOCK');
+    expect(errorMessage({ shortMessage: 'could not coalesce error', info: { error: { message: 'historical state abc is not available' } } })).toContain('historique');
+  });
   it('shows signing, then pending hash, and waits for a successful receipt', async () => {
     const update = vi.fn(); const wait = vi.fn().mockResolvedValue({ status: 1, hash: 'confirmed' });
     expect(await confirmTransaction(async () => ({ hash: 'submitted', wait }), update)).toBe('confirmed');
