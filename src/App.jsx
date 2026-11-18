@@ -1,11 +1,10 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 const Landing = lazy(() => import('./pages/Landing'));
-const RecruiterLogin = lazy(() => import('./pages/RecruiterLogin'));
 const RecruiterVerify = lazy(() => import('./pages/RecruiterVerify'));
 const UniversityDashboard = lazy(() => import('./pages/UniversityDashboard'));
 const UniversityLogin = lazy(() => import('./pages/UniversityLogin'));
@@ -18,8 +17,8 @@ function RoutedApp() {
     <Suspense fallback={<p className="wrap page" role="status">Chargement de la page…</p>}>
       <Routes>
         <Route path="/" element={<PublicLayout><Landing /></PublicLayout>} />
-        <Route path="/recruteur/connexion" element={<PublicLayout><RecruiterLogin /></PublicLayout>} />
-        <Route element={<ProtectedRoute />}><Route path="/recruteur/verifier" element={<PublicLayout><RecruiterVerify /></PublicLayout>} /></Route>
+        <Route path="/recruteur/connexion" element={<Navigate to="/recruteur/verifier" replace />} />
+        <Route path="/recruteur/verifier" element={<PublicLayout><RecruiterVerify /></PublicLayout>} />
         <Route path="/universite/connexion" element={<PublicLayout><UniversityLogin /></PublicLayout>} />
         <Route element={<ProtectedRoute role="university" />}><Route path="/universite" element={<UniversityDashboard />} /></Route>
         <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />

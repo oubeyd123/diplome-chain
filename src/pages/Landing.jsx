@@ -5,7 +5,7 @@ export default function Landing() {
     <section className="hero"><div><p className="eyebrow">Université de Sousse · Confiance numérique</p>
       <h1>Un diplôme. Une empreinte. Une preuve vérifiable.</h1>
       <p className="lead">Des diplômes dont toute modification est détectable, grâce à une empreinte enregistrée sur la blockchain. Recruteurs, vérifiez un PDF en quelques secondes.</p>
-      <div className="row hero-actions"><Link className="btn" to="/recruteur/connexion">Espace recruteur</Link><Link className="btn ghost" to="/universite">Espace université</Link></div>
+      <div className="row hero-actions"><Link className="btn" to="/recruteur/verifier">Vérifier un diplôme</Link><Link className="btn ghost" to="/universite">Espace université</Link></div>
     </div><Rosette /></section>
     <section className="landing-section"><h2>Comment ça marche ?</h2><ol className="feature-grid">
       <li><h3>L’université émet</h3><p>Elle prépare le diplôme PDF et signe son enregistrement avec son portefeuille.</p></li>

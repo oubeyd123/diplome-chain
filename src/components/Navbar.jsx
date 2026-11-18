@@ -5,7 +5,7 @@ export default function Navbar({ wallet }) {
     <NavLink className="brand" to="/">◈ DiplômeChain</NavLink>
     <nav aria-label="Navigation principale">
       <NavLink end to="/">Accueil</NavLink>
-      <NavLink to="/recruteur/connexion">Recruteurs</NavLink>
+      <NavLink to="/recruteur/verifier">Vérifier un diplôme</NavLink>
       <NavLink to="/universite">Université</NavLink>
     </nav>
     {wallet && <span className="chip">{wallet.account ? `${shortAddr(wallet.account)} · ${wallet.chainName}` : 'Portefeuille déconnecté'}</span>}
