@@ -9,13 +9,27 @@ it('splits provider-limited ranges without gaps and starts at the deployment blo
   expect(queryFilter.mock.calls.every(([, from]) => from >= 123)).toBe(true);
 });
 it('combines issue and revoke events with diploma metadata at one block', async () => {
+  const issued = { name: 'DiplomeEmis', args: { hashPdf: 'hash' }, transactionHash: 'tx' };
+  const revoked = { name: 'DiplomeRevoque', args: { hashPdf: 'hash' } };
   const contract = {
-    runner: { getBlockNumber: async () => 105 },
-    filters: { DiplomeEmis: () => 'issued', DiplomeRevoque: () => 'revoked' },
-    queryFilter: vi.fn(async filter => filter === 'issued' ? [{ args: { hashPdf: 'hash' }, transactionHash: 'tx' }] : [{ args: { hashPdf: 'hash' } }]),
+    target: '0xregistry',
+    runner: {
+      getBlockNumber: async () => 105,
+      getLogs: vi.fn(async () => [{ event: issued, transactionHash: 'tx' }, { event: revoked, transactionHash: 'revoke-tx' }]),
+    },
+    interface: {
+      getEvent: name => ({ topicHash: name }),
+      parseLog: log => log.event,
+    },
     verifierDiplome: vi.fn(async () => ({ prenomEtudiant: 'Jane', nomEtudiant: 'Doe', filiere: 'CS', annee: 2026n, date: 1n, valide: true })),
   };
   expect(await loadIssued(contract, 100)).toEqual([{ hash: 'hash', name: 'Jane Doe', filiere: 'CS', year: 2026, date: 1, valid: false, tx: 'tx' }]);
+  expect(contract.runner.getLogs).toHaveBeenCalledWith({
+    address: '0xregistry',
+    fromBlock: 100,
+    toBlock: 105,
+    topics: [['DiplomeEmis', 'DiplomeRevoque']],
+  });
   expect(contract.verifierDiplome).toHaveBeenCalledWith('hash', { blockTag: 105 });
   await expect(loadIssued(contract, -1)).rejects.toThrow('VITE_DEPLOY_BLOCK');
 });
